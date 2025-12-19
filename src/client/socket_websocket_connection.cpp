@@ -201,7 +201,7 @@ bool SocketWebSocketConnection::IsConnected() const {
 
 int SocketWebSocketConnection::ReceiverThreadFunction(){
   std::cout << "[WebSocketConnection] Receiver thread started" << std::endl;
-  std::cout << "[WebSocketConnection] bson_only_mode: " << bson_only_mode_ << std::endl;
+  // JSON mode only
   
   while (!terminate_receiver_thread_) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -310,25 +310,16 @@ void SocketWebSocketConnection::RegisterIncomingMessageCallback(std::function<vo
   callback_function_defined_ = true;
 }
 
-void SocketWebSocketConnection::RegisterIncomingMessageCallback(std::function<void(bson_t&)> fun){
-  incoming_message_callback_bson_ = fun;
-  callback_function_defined_ = true;
-}
+// BSON support removed - using JSON mode only
 
 void SocketWebSocketConnection::RegisterErrorCallback(std::function<void(TransportError)> fun){
   error_callback_ = fun;
 }
 
 void SocketWebSocketConnection::SetTransportMode(ITransportLayer::TransportMode mode){
-  switch(mode){
-    case ITransportLayer::JSON:
-      bson_only_mode_ = false;
-      break;
-    case ITransportLayer::BSON:
-      bson_only_mode_ = true;
-      break;
-    default:
-      std::cerr << "[WebSocketConnection] Given TransportMode not implemented" << std::endl;
+  // BSON support removed - using JSON mode only
+  if (mode != ITransportLayer::JSON) {
+    std::cerr << "[WebSocketConnection] Only JSON mode is supported" << std::endl;
   }
 }
 
@@ -416,35 +407,18 @@ void SocketWebSocketConnection::on_fail(connection_hdl hdl) {
 }
 
 void SocketWebSocketConnection::on_message(connection_hdl hdl, message_ptr msg) {
-  if (bson_only_mode_) {
-    const std::string& payload = msg->get_payload();
-    const uint8_t* data = reinterpret_cast<const uint8_t*>(payload.c_str());
-    size_t length = payload.size();
-    
-    bson_t b;
-    if (!bson_init_static(&b, data, length)) {
-      std::cout << "[WebSocketConnection] Error on BSON parse - Ignoring message" << std::endl;
-      return;
-    }
-    
-    if (incoming_message_callback_bson_) {
-      incoming_message_callback_bson_(b);
-    }
-    
-    bson_destroy(&b);
-  } else {
-    const std::string& payload = msg->get_payload();
-    json j;
-    j.Parse(payload.c_str());
-    
-    if (j.HasParseError()) {
-      std::cout << "[WebSocketConnection] JSON parse error - Ignoring message" << std::endl;
-      return;
-    }
-    
-    if (incoming_message_callback_) {
-      incoming_message_callback_(j);
-    }
+  // JSON mode only
+  const std::string& payload = msg->get_payload();
+  json j;
+  j.Parse(payload.c_str());
+  
+  if (j.HasParseError()) {
+    std::cout << "[WebSocketConnection] JSON parse error - Ignoring message" << std::endl;
+    return;
+  }
+  
+  if (incoming_message_callback_) {
+    incoming_message_callback_(j);
   }
 }
 

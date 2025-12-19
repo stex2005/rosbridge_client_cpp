@@ -60,7 +60,7 @@ namespace rosbridge2cpp{
   int SocketTCPConnection::ReceiverThreadFunction(){
 
     std::cout<<"[TCPConnection] Receiving\n";
-    std::cout<<"[TCPConnection] bson_only_mode is : " << bson_only_mode_ << std::endl;
+    // JSON mode only
 
     uint32_t buf_size=1000000; // 1 MB
     std::unique_ptr<unsigned char[]> recv_buffer(new unsigned char[buf_size]); 
@@ -85,65 +85,17 @@ namespace rosbridge2cpp{
       }
 
       recv_buffer.get()[count] = 0; // null-terminate to handle it like a c-string
-      if(bson_only_mode_){
-        for (int i = 0; i < count; i++) {
-          std::cout << "0x" << std::setw(2) << std::setfill('0') << std::hex << (int)( recv_buffer[i] );
-        }
-        std::cout << "[TCPConnection] Received Data end" << std::endl;
-        std::cout << std::endl;
-      }else{
-        // Print the human-readable data
-        printf("%.*s", count, recv_buffer.get());
-      }
+      // Print the human-readable data
+      printf("%.*s", count, recv_buffer.get());
 
       // TODO catch parse error properly
       json j;
-      bson_t b;
+      j.Parse((char *)recv_buffer.get());
 
-      if(bson_only_mode_){
-        // std::cerr << "bson receive not implemented right now" << std::endl;
-        if(!bson_init_static (&b, recv_buffer.get(), count)){
-          std::cout << "[TCPConnection] Error on BSON parse - Ignoring message" << std::endl;
-          continue;
-        }
-        if(incoming_message_callback_bson_){
-          incoming_message_callback_bson_(b);
-        }
-
-        continue;
-        /*
-        if(!bson_init_static (&b, recv_buffer.get(), count)){
-          std::cout << "Error on BSON parse - Ignoring message" << std::endl;
-          continue;
-        }
-        if(incoming_message_callback_bson_){
-          incoming_message_callback_bson_(b);
-        }
-        std::string str = bson_as_json (&b, NULL);
-        // if (!bson_init_from_json(&bson, str_repr.c_str(), -1, &error)) {
-        //   printf("bson_init_from_json() failed: %s\n", error.message);
-        //   bson_destroy(&bson);
-        //   return false;
-        // }
-        // const uint8_t *bson_data = bson_get_data (&bson);
-        // uint32_t bson_size = bson.len;
-        // bool retval = transport_layer_.SendMessage(bson_data,bson_size);
-        // bson_destroy(&b);
-        j.Parse(str);
-        */
-      }else{
-        j.Parse((char *)recv_buffer.get());
-
-        // TODO Use a thread for the message callback?
-        if(incoming_message_callback_){
-          incoming_message_callback_(j);
-        }
+      // TODO Use a thread for the message callback?
+      if(incoming_message_callback_){
+        incoming_message_callback_(j);
       }
-
-
-
-      if(bson_only_mode_)
-        bson_destroy(&b);
       std::cout.flush();
     }
     return 0; // Everything went OK - terminateReceiverThread is now true
@@ -155,11 +107,7 @@ namespace rosbridge2cpp{
     callback_function_defined_ = true;
   }
 
-  void SocketTCPConnection::RegisterIncomingMessageCallback(std::function<void(bson_t&)> fun){
-    // TODO unify with report_error
-    incoming_message_callback_bson_ = fun;
-    callback_function_defined_ = true;
-  }
+  // BSON support removed - using JSON mode only
 
   void SocketTCPConnection::RegisterErrorCallback(std::function<void(TransportError)> fun){
     error_callback_ = fun;
@@ -172,15 +120,9 @@ namespace rosbridge2cpp{
   }
 
   void SocketTCPConnection::SetTransportMode(ITransportLayer::TransportMode mode){
-    switch(mode){
-      case ITransportLayer::JSON:
-        bson_only_mode_ = false;
-      break;
-      case ITransportLayer::BSON:
-        bson_only_mode_ = true;
-      break;
-      default:
-        std::cerr << "Given TransportMode Not implemented " << std::endl;
+    // BSON support removed - using JSON mode only
+    if (mode != ITransportLayer::JSON) {
+      std::cerr << "[TCPConnection] Only JSON mode is supported" << std::endl;
     }
   }
 }

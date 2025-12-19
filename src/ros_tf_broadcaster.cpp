@@ -26,10 +26,7 @@ namespace rosbridge2cpp {
 		tf_topic_.Publish(tf_message);
 	}
 
-	void ROSTFBroadcaster::SendTransform(bson_t &bson)
-	{
-		tf_topic_.Publish(&bson);
-	}
+	// BSON support removed - using JSON mode only
 
 	void ROSTFBroadcaster::SendStaticTransforms(json &geometry_msgs_transformstamped_array_msg)
 	{

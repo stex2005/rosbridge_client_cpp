@@ -189,56 +189,7 @@ namespace rosbridge2cpp {
 		return sent;
 	}
 
-	bool ROSTopic::Publish(bson_t *message)
-	{
-		if (!is_advertised_) {
-			if (!Advertise()) {
-				return false;
-			}
-		}
-
-		assert(message);
-
-		std::string publish_id = GeneratePublishID();
-
-		ROSBridgePublishMsg cmd(true);
-		cmd.id_ = publish_id;
-		cmd.topic_ = topic_name_;
-		cmd.msg_bson_ = message;
-		cmd.latch_ = latch_;
-
-		// Try to queue message
-		bool queued = ros_.QueueMessage(topic_name_, queue_size_, cmd);
-		
-		// Store the last published message after successful queue
-		// We serialize after queuing to avoid allocator mismatch issues
-		if (queued) {
-			std::lock_guard<std::mutex> lock(last_published_message_mutex_);
-			last_published_message_ = "[BSON message: " + std::to_string(message->len) + " bytes]";
-		}
-		
-		// If queue failed, reset advertised state and try to re-advertise and requeue
-		// This handles the case where connection was lost and reconnected
-		if (!queued && is_advertised_) {
-			std::cout << "[ROSTopic] Queue failed, resetting advertised state for topic: " << topic_name_ << std::endl;
-			is_advertised_ = false;
-			advertise_id_ = "";
-			
-			// Try to re-advertise
-			if (Advertise()) {
-				// Retry queuing
-				std::string retry_publish_id = GeneratePublishID();
-				ROSBridgePublishMsg retry_cmd(true);
-				retry_cmd.id_ = retry_publish_id;
-				retry_cmd.topic_ = topic_name_;
-				retry_cmd.msg_bson_ = message;
-				retry_cmd.latch_ = latch_;
-				queued = ros_.QueueMessage(topic_name_, queue_size_, retry_cmd);
-			}
-		}
-		
-		return queued;
-	}
+	// BSON support removed - using JSON mode only
 
 	std::string ROSTopic::GeneratePublishID()
 	{

@@ -45,7 +45,7 @@ namespace rosbridge2cpp {
 	public:
 		ROSBridge(ITransportLayer &transport) : transport_layer_(transport) {}
 
-		ROSBridge(ITransportLayer &transport, bool bson_only_mode) : transport_layer_(transport), bson_only_mode_(bson_only_mode) {}
+		// BSON support removed - using JSON mode only
 
 		~ROSBridge();
 
@@ -98,15 +98,8 @@ namespace rosbridge2cpp {
 		// IDs for service/topic etc. messages
 		long id_counter = 0;
 
-		// Returns true if the bson only mode is activated
-		bool bson_only_mode() {
-			return bson_only_mode_;
-		}
-
-		// Enable the BSON only mode.
-		// All communications with the rosbridge server
-		// will be in BSON, instead of JSON
-		void enable_bson_mode() { bson_only_mode_ = true; }
+		// BSON support removed - using JSON mode only
+		bool bson_only_mode() { return false; }
 
 	private:
 		// Callback function for the used ITransportLayer.
@@ -116,7 +109,7 @@ namespace rosbridge2cpp {
 		// @pre This method assumes a valid json variable
 		void IncomingMessageCallback(json &data);
 
-		void IncomingMessageCallback(bson_t &bson);
+		// BSON support removed - using JSON mode only
 
 		// Handler Method for reply packet
 		void HandleIncomingPublishMessage(ROSBridgePublishMsg &data);
@@ -133,8 +126,7 @@ namespace rosbridge2cpp {
 		std::unordered_map<std::string, std::list<ROSCallbackHandle<FunVrROSPublishMsg>>> registered_topic_callbacks_;
 		std::unordered_map<std::string, FunVrROSServiceResponseMsg> registered_service_callbacks_;
 		std::unordered_map<std::string, FunVrROSCallServiceMsgrROSServiceResponseMsgrAllocator> registered_service_request_callbacks_;
-		std::unordered_map<std::string, FunVrROSCallServiceMsgrROSServiceResponseMsg> registered_service_request_callbacks_bson_;
-		bool bson_only_mode_ = false;
+		// BSON support removed - using JSON mode only
 
 		spinlock transport_layer_access_mutex_;
 
@@ -142,9 +134,7 @@ namespace rosbridge2cpp {
 
 		std::thread publisher_queue_thread_;
 		spinlock change_publisher_queues_mutex_;
-		std::unordered_map<std::string, size_t> publisher_topics_; // points to index in publisher_queues_
-		std::vector<std::queue<bson_t*>> publisher_queues_;	 // data to publish on the queue thread
-		size_t current_publisher_queue_ = 0;
+		// BSON support removed - publisher queues not used in JSON mode
 		bool run_publisher_queue_thread_ = true;
 		std::chrono::system_clock::time_point LastDataSendTime; // watchdog for send thread. Socket sometimes blocks infinitely.
 	};

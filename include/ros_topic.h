@@ -77,7 +77,7 @@ namespace rosbridge2cpp{
 	// Please make sure that the message matches the type of the topic,
 	// since this will NOT be valided before sending it to the rosbridge.
 	bool Publish(rapidjson::Value &message);
-	bool Publish(bson_t *message);
+	// BSON support removed - using JSON mode only
 
 	std::string GeneratePublishID();
 

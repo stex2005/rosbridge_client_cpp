@@ -8,7 +8,6 @@
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/client.hpp>
-#include <bson.h>
 
 #include "rapidjson/document.h"
 
@@ -57,7 +56,6 @@ namespace rosbridge2cpp{
       void ReconnectThreadFunction();
       bool AttemptReconnect();
       void RegisterIncomingMessageCallback(std::function<void(json&)> fun);
-      void RegisterIncomingMessageCallback(std::function<void(bson_t&)> fun);
       void RegisterErrorCallback(std::function<void(TransportError)> fun);
       void ReportError(TransportError err);
       void SetTransportMode(ITransportLayer::TransportMode mode);
@@ -82,14 +80,12 @@ namespace rosbridge2cpp{
       bool is_connected_ = false;
       bool is_reconnecting_ = false;
       bool callback_function_defined_ = false;
-      bool bson_only_mode_ = false;
       bool auto_reconnect_ = true;
       bool terminate_reconnect_thread_ = false;
       std::thread reconnect_thread_;
       bool reconnect_thread_set_up_ = false;
       
       std::function<void(json&)> incoming_message_callback_;
-      std::function<void(bson_t&)> incoming_message_callback_bson_;
       std::function<void(TransportError)> error_callback_ = nullptr;
       
       mutable std::mutex connection_mutex_;

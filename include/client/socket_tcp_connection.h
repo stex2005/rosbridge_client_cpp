@@ -8,7 +8,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <bson.h>
 
 #include "rapidjson/document.h"
 
@@ -55,7 +54,6 @@ namespace rosbridge2cpp{
       bool SendMessage(const uint8_t *data, unsigned int length);
       int ReceiverThreadFunction();
       void RegisterIncomingMessageCallback(std::function<void(json&)> fun);
-      void RegisterIncomingMessageCallback(std::function<void(bson_t&)> fun);
       void RegisterErrorCallback(std::function<void(TransportError)> fun);
       void ReportError(TransportError err);
       void SetTransportMode(ITransportLayer::TransportMode mode);
@@ -70,9 +68,7 @@ namespace rosbridge2cpp{
       bool terminate_receiver_thread_ = false;
       bool receiver_thread_set_up_ = false;
       bool callback_function_defined_ = false;
-      bool bson_only_mode_ = false;
       std::function<void(json&)> incoming_message_callback_;
-      std::function<void(bson_t&)> incoming_message_callback_bson_;
       std::function<void(TransportError)> error_callback_ = nullptr;
   };
 }
