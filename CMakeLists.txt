@@ -9,37 +9,7 @@ find_package(PkgConfig REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
 
-# Find libbson - prefer static library for deployment
-if(PkgConfig_FOUND)
-	pkg_search_module(LIBBSON libbson-1.0)
-endif()
-
-# Try to find static libbson library (required for deployment without installing libraries on target)
-find_library(LIBBSON_STATIC_LIB 
-	NAMES bson-static-1.0 libbson-static-1.0
-	PATHS ${LIBBSON_LIBRARY_DIRS} /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib
-)
-
-if(LIBBSON_STATIC_LIB)
-	message(STATUS "Found static libbson: ${LIBBSON_STATIC_LIB}")
-	set(LIBBSON_LIBRARIES ${LIBBSON_STATIC_LIB})
-	# Ensure we have include dirs
-	if(NOT LIBBSON_INCLUDE_DIRS AND PkgConfig_FOUND)
-		pkg_search_module(LIBBSON libbson-1.0)
-	endif()
-	if(NOT LIBBSON_INCLUDE_DIRS)
-		find_path(LIBBSON_INCLUDE_DIRS 
-			NAMES bson.h
-			PATHS /usr/include /usr/local/include
-			PATH_SUFFIXES libbson-1.0
-		)
-	endif()
-else()
-	# Static library not found - fail the build
-	message(FATAL_ERROR 
-		"Static libbson library (libbson-static-1.0.a) not found!\n"
-	)
-endif()
+# BSON support has been removed - using JSON mode only
 
 if(NOT WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall")
@@ -49,13 +19,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Libraries
-set(LIBS ${LIBS} ${LIBBSON_LIBRARIES})
 set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
-
-if(WIN32 AND NOT PkgConfig_FOUND)
-	set(LIBS ${LIBS} "ws2_32") # Needed by libbson on windows 
-endif()
 
 # Example executables (only built when this is the main project)
 # These compile sources directly for demonstration purposes
@@ -69,8 +34,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		src/ros_service.cpp 
 		src/ros_tf_broadcaster.cpp 
 	)
-	target_include_directories(websocket_client PRIVATE include ${LIBBSON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-	target_compile_definitions(websocket_client PRIVATE RAPIDJSON_HAS_STDSTRING=1 BSON_STATIC=1 ${LIBBSON_CFLAGS_OTHER})
+	target_include_directories(websocket_client PRIVATE include ${Boost_INCLUDE_DIRS})
+	target_compile_definitions(websocket_client PRIVATE RAPIDJSON_HAS_STDSTRING=1)
 
 	# Alternative TCP client (for ROS1 compatibility)
 	ADD_EXECUTABLE( tcp_client
@@ -81,8 +46,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		src/ros_service.cpp 
 		src/ros_tf_broadcaster.cpp 
 	)
-	target_include_directories(tcp_client PRIVATE include ${LIBBSON_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-	target_compile_definitions(tcp_client PRIVATE RAPIDJSON_HAS_STDSTRING=1 BSON_STATIC=1 ${LIBBSON_CFLAGS_OTHER})
+	target_include_directories(tcp_client PRIVATE include ${Boost_INCLUDE_DIRS})
+	target_compile_definitions(tcp_client PRIVATE RAPIDJSON_HAS_STDSTRING=1)
 
 	# Comprehensive demo client showing multiple features
 	# Links against the rosbridge_client_cpp library instead of compiling all sources
@@ -106,32 +71,20 @@ target_include_directories(rosbridge_client_cpp
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
-		$<BUILD_INTERFACE:${LIBBSON_INCLUDE_DIRS}>
-		$<INSTALL_INTERFACE:${LIBBSON_INCLUDE_DIRS}>
 	PRIVATE
 		${Boost_INCLUDE_DIRS}
 )
 
-target_link_directories(rosbridge_client_cpp PRIVATE ${LIBBSON_LIBRARY_DIRS})
-
 target_compile_definitions(rosbridge_client_cpp
 	PUBLIC
 		RAPIDJSON_HAS_STDSTRING=1
-	PRIVATE
-		BSON_STATIC=1
-		${LIBBSON_CFLAGS_OTHER}
 )
 
 target_link_libraries(rosbridge_client_cpp
 	PRIVATE
-		${LIBBSON_LIBRARIES}
 		${CMAKE_THREAD_LIBS_INIT}
 		${Boost_LIBRARIES}
 )
-
-if(WIN32 AND NOT PkgConfig_FOUND)
-	target_link_libraries(rosbridge_client_cpp PRIVATE "ws2_32")
-endif()
 
 # Copy to project lib directory (main project /lib, not install folder)
 add_custom_command(TARGET rosbridge_client_cpp POST_BUILD
