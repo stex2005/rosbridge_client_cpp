@@ -126,6 +126,7 @@ namespace rosbridge2cpp {
 		std::unordered_map<std::string, std::list<ROSCallbackHandle<FunVrROSPublishMsg>>> registered_topic_callbacks_;
 		std::unordered_map<std::string, FunVrROSServiceResponseMsg> registered_service_callbacks_;
 		std::unordered_map<std::string, FunVrROSCallServiceMsgrROSServiceResponseMsgrAllocator> registered_service_request_callbacks_;
+		std::unordered_map<std::string, FunVrROSCallServiceMsgrROSServiceResponseMsg> registered_service_request_callbacks_no_allocator_;
 		// BSON support removed - using JSON mode only
 
 		spinlock transport_layer_access_mutex_;

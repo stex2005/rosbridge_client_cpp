@@ -99,16 +99,24 @@ namespace rosbridge2cpp {
 	{
 		std::string &incoming_service = data.service_;
 
+		// Check for allocator-based callback first
 		auto service_request_callback_it = registered_service_request_callbacks_.find(incoming_service);
-
-		if (service_request_callback_it == registered_service_request_callbacks_.end()) {
-			std::cerr << "[ROSBridge] Received service request for service :" << incoming_service << " where no callback has been registered before" << std::endl;
+		if (service_request_callback_it != registered_service_request_callbacks_.end()) {
+			rapidjson::Document response_allocator;
+			// Execute the callback for the given service id
+			service_request_callback_it->second(data, response_allocator.GetAllocator());
 			return;
 		}
-		rapidjson::Document response_allocator;
 
-		// Execute the callback for the given service id
-		service_request_callback_it->second(data, response_allocator.GetAllocator());
+		// Check for non-allocator callback
+		auto service_request_callback_no_alloc_it = registered_service_request_callbacks_no_allocator_.find(incoming_service);
+		if (service_request_callback_no_alloc_it != registered_service_request_callbacks_no_allocator_.end()) {
+			// Execute the callback for the given service id
+			service_request_callback_no_alloc_it->second(data);
+			return;
+		}
+
+		std::cerr << "[ROSBridge] Received service request for service :" << incoming_service << " where no callback has been registered before" << std::endl;
 	}
 
 	// void ROSBridge::HandleIncomingMessage(ROSBridgeMsg &msg) {}
@@ -181,6 +189,11 @@ namespace rosbridge2cpp {
 	void ROSBridge::RegisterServiceRequestCallback(std::string service_name, FunVrROSCallServiceMsgrROSServiceResponseMsgrAllocator fun)
 	{
 		registered_service_request_callbacks_[service_name] = fun;
+	}
+
+	void ROSBridge::RegisterServiceRequestCallback(std::string service_name, FunVrROSCallServiceMsgrROSServiceResponseMsg fun)
+	{
+		registered_service_request_callbacks_no_allocator_[service_name] = fun;
 	}
 
 

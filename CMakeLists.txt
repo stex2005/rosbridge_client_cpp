@@ -6,8 +6,20 @@ message(STATUS "Ready to build ${PROJECT_NAME}")
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
+# Prefer static Boost libraries for deployment compatibility
+# This ensures the binary doesn't depend on specific Boost .so versions on the target system
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_RUNTIME OFF)  # Use dynamic runtime, but static Boost libs
+set(Boost_USE_MULTITHREADED ON)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Threads REQUIRED)
+
+# Verify Boost linking (for debugging)
+if(Boost_FOUND)
+    message(STATUS "Boost version: ${Boost_VERSION}")
+    message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+    message(STATUS "Boost system library: ${Boost_SYSTEM_LIBRARY}")
+endif()
 
 # BSON support has been removed - using JSON mode only
 
